@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Dietrich — AI Food Label & Hidden Additive Scanner</title>
+  <style>
+    :root {
+      --emerald: #0b8a4e;
+      --emerald-dark: #076b3c;
+      --emerald-light: #e8f7f0;
+      --bg: #f4f7f5;
+      --card: #ffffff;
+      --text: #111827;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+      --safe-bg: #dcfce7;
+      --safe-text: #15803d;
+      --warn-bg: #fef3c7;
+      --warn-text: #b45309;
+      --avoid-bg: #fee2e2;
+      --avoid-text: #b91c1c;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding-bottom: 84px;
+    }
+
+    /* Top App Header */
+    .app-header {
+      background: var(--emerald);
+      color: #fff;
+      padding: 16px 18px 22px;
+      border-radius: 0 0 24px 24px;
+      box-shadow: 0 4px 16px rgba(11, 138, 78, 0.18);
+    }
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .brand-logo {
+      width: 34px;
+      height: 34px;
+      background: #fff;
+      color: var(--emerald);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 1.2rem;
+    }
+    .brand-title {
+      font-size: 1.2rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    .brand-sub {
+      font-size: 0.72rem;
+      opacity: 0.9;
+    }
+    .demo-badge {
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+
+    /* Main Container */
+    .container {
+      max-width: 480px;
+      margin: -12px auto 0;
+      padding: 0 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+      border: 1px solid var(--border);
+    }
+
+    .step-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--emerald);
+      margin-bottom: 10px;
+    }
+
+    /* Step 1: Meal Restriction Chips */
+    .chips-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .chip {
+      border: 1.5px solid var(--border);
+      background: #fff;
+      color: var(--text);
+      padding: 7px 12px;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .chip.active {
+      background: var(--emerald-light);
+      border-color: var(--emerald);
+      color: var(--emerald-dark);
+      box-shadow: 0 2px 6px rgba(11, 138, 78, 0.12);
+    }
+
+    /* Step 2: Camera Viewfinder & Upload */
+    .scanner-box {
+      position: relative;
+      background: #f9fafb;
+      border: 2px dashed #cbd5e1;
+      border-radius: 16px;
+      padding: 18px 14px;
+      text-align: center;
+      overflow: hidden;
+    }
+    .viewfinder-frame {
+      position: relative;
+      width: 170px;
+      height: 145px;
+      margin: 0 auto 12px;
+      border-radius: 14px;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+      overflow: hidden;
+    }
+    /* Corner Brackets like reference UI */
+    .corner {
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      border-color: var(--emerald);
+      border-style: solid;
+      z-index: 3;
+    }
+    .tl { top: 8px; left: 8px; border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
+    .tr { top: 8px; right: 8px; border-width: 3px 3px 0 0; border-radius: 0 4px 0 0; }
+    .bl { bottom: 8px; left: 8px; border-width: 0 0 3px 3px; border-radius: 0 0 0 4px; }
+    .br { bottom: 8px; right: 8px; border-width: 0 3px 3px 0; border-radius: 0 0 4px 0; }
+
+    .laser-line {
+      display: none;
+      position: absolute;
+      left: 10px;
+      right: 10px;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, #10b981, transparent);
+      box-shadow: 0 0 8px #10b981;
+      z-index: 4;
+      animation: scanLaser 1.2s ease-in-out infinite;
+    }
+    @keyframes scanLaser {
+      0%, 100% { top: 18px; }
+      50% { top: 122px
